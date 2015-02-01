@@ -50,7 +50,7 @@
     <script type="text/javascript" src="/scripts/notifications/notifications.js?ay=y&v=3"></script>
     <script src="/scripts/libs/jquery-ui-1.7.1.custom.min.js?v=3" type="text/javascript"></script>
     <script type="text/javascript" src="/scripts/libs/SimpleModal.js?v=3"></script>
-    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="//www.google.com/jsapi"></script>
     <script type="text/javascript" src="/scripts/new-mbd.js?v=3"></script>
 
     <script type="text/javascript">
