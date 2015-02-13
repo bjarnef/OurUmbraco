@@ -209,8 +209,12 @@ namespace uForum.Library
             try
             {
                 var ipAddress = GetIpAddress();
+                spamResult.Ip = ipAddress;
+
                 var client = new RestClient("http://api.stopforumspam.org");
                 var request = new RestRequest(string.Format("api?ip={0}&email={1}&f=json", ipAddress, HttpUtility.UrlEncode(email)), Method.GET);
+                Log.Add(LogTypes.Debug, -1, string.Format("Getting spam result from URL: {0}", request.Resource));
+
                 var response = client.Execute(request);
                 var jsonResult = new JsonDeserializer();
                 var spamCheckResult = jsonResult.Deserialize<SpamCheckResult>(response);
@@ -220,20 +224,18 @@ namespace uForum.Library
                     var score = spamCheckResult.Ip.Confidence + spamCheckResult.Email.Confidence;
 
                     var blocked = score > SpamBlockThreshold;
-                    if (score > PotentialSpammerThreshold)
-                    {
-                        spamResult.Ip = ipAddress;
-                        spamResult.ScoreEmail = spamCheckResult.Email.Confidence.ToString(CultureInfo.InvariantCulture);
-                        spamResult.FrequencyEmail = spamCheckResult.Email.Frequency.ToString(CultureInfo.InvariantCulture);
-                        spamResult.ScoreIp = spamCheckResult.Ip.Confidence.ToString(CultureInfo.InvariantCulture);
-                        spamResult.FrequencyIp = spamCheckResult.Ip.Frequency.ToString(CultureInfo.InvariantCulture);
-                        spamResult.Blocked = blocked;
-                        spamResult.PotentialSpammer = true;
-                        spamResult.TotalScore = score;
+                    var potentialSpammer = score > PotentialSpammerThreshold;
 
-                        if (sendMail)
-                            SendPotentialSpamMemberMail(spamResult);
-                    }
+                    spamResult.ScoreEmail = spamCheckResult.Email.Confidence.ToString(CultureInfo.InvariantCulture);
+                    spamResult.FrequencyEmail = spamCheckResult.Email.Frequency.ToString(CultureInfo.InvariantCulture);
+                    spamResult.ScoreIp = spamCheckResult.Ip.Confidence.ToString(CultureInfo.InvariantCulture);
+                    spamResult.FrequencyIp = spamCheckResult.Ip.Frequency.ToString(CultureInfo.InvariantCulture);
+                    spamResult.Blocked = blocked;
+                    spamResult.PotentialSpammer = potentialSpammer;
+                    spamResult.TotalScore = score;
+
+                    if (potentialSpammer && sendMail)
+                        SendPotentialSpamMemberMail(spamResult);
                 }
                 else
                 {
