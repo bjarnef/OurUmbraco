@@ -92,9 +92,14 @@ namespace uRelease.Controllers
             // Make sure all versions exist on Our 
             foreach (var orderedVersion in orderedVersions.Where(v => v.Value.AsFullVersion() > "6.0.0".AsFullVersion()))
             {
+                // if the version has been released already don't attempt to create it in umbraco
+                // it might not be there for a good reason (security issues for example)
+                if (orderedVersion.Released) 
+                    continue;
+
                 var versionExistsInUmbraco = releasesNode.Children.Cast<Node>().Any(child => child.Name == orderedVersion.Value);
 
-                if (versionExistsInUmbraco) 
+                if (versionExistsInUmbraco)
                     continue;
 
                 //make it

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
-using System.Xml.XPath;
 using umbraco;
 using umbraco.BusinessLogic;
+using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.datatype;
 using umbraco.cms.businesslogic.web;
 
@@ -17,7 +16,7 @@ namespace uRelease.EventHandlers
             Document.BeforePublish += DocumentBeforePublish;
         }
 
-        private void DocumentBeforePublish(Document sender, umbraco.cms.businesslogic.PublishEventArgs e)
+        private void DocumentBeforePublish(Document sender, PublishEventArgs e)
         {
             if (sender.ContentType.Alias.ToLowerInvariant() == "Release".ToLowerInvariant())
             {
