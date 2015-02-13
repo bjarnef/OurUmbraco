@@ -213,8 +213,6 @@ namespace uForum.Library
 
                 var client = new RestClient("http://api.stopforumspam.org");
                 var request = new RestRequest(string.Format("api?ip={0}&email={1}&f=json", ipAddress, HttpUtility.UrlEncode(email)), Method.GET);
-                Log.Add(LogTypes.Debug, -1, string.Format("Getting spam result from URL: {0}", request.Resource));
-
                 var response = client.Execute(request);
                 var jsonResult = new JsonDeserializer();
                 var spamCheckResult = jsonResult.Deserialize<SpamCheckResult>(response);
