@@ -340,25 +340,35 @@ namespace uForum.Businesslogic
             if (reputationTotal >= 50)
                 return false;
 
-            var isSpam = TextContainsSpam(body) || IsSuspiciousBehavior(body);
+            var isSuspicious = TextContainsSpam(body) || IsSuspiciousBehavior(body);
+            var isSpam = false;
 
-            if (isSpam)
+            if (isSuspicious)
             {
-                // Deduct karma
-                member.getProperty("reputationTotal").Value = reputationTotal >= 0 ? reputationTotal - 1 : 0;
+                var spamResult = Utills.GetSpamCheckResult(member.Email, member.Text, false);
+                
+                //if spamresult is null something went wrong checking the API, assume that it's not working and mark as spam just to be safe
+                if (spamResult.TotalScore > 5)
+                {
+                    isSpam = true;
 
-                int reputationCurrent;
-                int.TryParse(member.getProperty("reputationCurrent").Value.ToString(), out reputationCurrent);
-                member.getProperty("reputationCurrent").Value = reputationCurrent >= 0 ? reputationCurrent - 1 : 0;
-                member.Save();
+                    // Deduct karma
+                    member.getProperty("reputationTotal").Value = reputationTotal >= 0 ? reputationTotal - 1 : 0;
 
-                SendSlackSpamReport(body, topicId, commentType, memberId);
+                    int reputationCurrent;
+                    int.TryParse(member.getProperty("reputationCurrent").Value.ToString(), out reputationCurrent);
+                    member.getProperty("reputationCurrent").Value = reputationCurrent >= 0 ? reputationCurrent - 1 : 0;
+                    member.Save();
+                }
+
+                // If isSpam is false then the post is just suspicious
+                SendSlackSpamReport(body, topicId, commentType, memberId, isSpam == false);
             }
 
             return isSpam;
         }
 
-        private static void SendSlackSpamReport(string postBody, int topicId, string commentType, int memberId)
+        private static void SendSlackSpamReport(string postBody, int topicId, string commentType, int memberId, bool merelySuspicious = false)
         {
             using (var client = new WebClient())
             {
@@ -376,8 +386,8 @@ namespace uForum.Businesslogic
                 } 
 
                 post = post + string.Format("{0} text: {1}\n\n", commentType, postBody.Substring(0, 2000));
-                
-                var body = string.Format("The following forum post was marked as spam by the spam system, if this is incorrect make sure to mark it as ham.\n\n{0}", post);
+
+                var body = string.Format("The following forum post was marked as {0} by the spam system, if this is incorrect make sure to mark it as ham.\n\n{1}", merelySuspicious ? "*SUSPICOUS*" : "*SPAM*", post);
                 
                 body = body.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
                 

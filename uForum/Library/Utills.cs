@@ -61,7 +61,7 @@ namespace uForum.Library
             }
             catch (Exception exception)
             {
-                Log.Add(LogTypes.Error, 0, string.Format("Could not get member {0} from the cache nor from the database - Exception: {1} {2} {3}", id, exception.Message,  exception.StackTrace, exception.InnerException));
+                Log.Add(LogTypes.Error, 0, string.Format("Could not get member {0} from the cache nor from the database - Exception: {1} {2} {3}", id, exception.Message, exception.StackTrace, exception.InnerException));
             }
 
             return null;
@@ -156,7 +156,7 @@ namespace uForum.Library
                 // If reputation is > ReputationThreshold they've got enough karma, spammers never get that far
 
                 var reputation = string.Empty;
-                if(member.getProperty("reputationTotal") != null && member.getProperty("reputationTotal").Value != null)
+                if (member.getProperty("reputationTotal") != null && member.getProperty("reputationTotal").Value != null)
                     reputation = member.getProperty("reputationTotal").Value.ToString();
 
                 int reputationTotal;
@@ -202,8 +202,10 @@ namespace uForum.Library
             return null;
         }
 
-        public static SpamResult CheckForSpam(string email, string name, bool sendMail)
+        public static SpamResult GetSpamCheckResult(string email, string name, bool sendMail)
         {
+            var spamResult = new SpamResult { Name = name, Email = email, PotentialSpammer = false };
+
             try
             {
                 var ipAddress = GetIpAddress();
@@ -220,23 +222,17 @@ namespace uForum.Library
                     var blocked = score > SpamBlockThreshold;
                     if (score > PotentialSpammerThreshold)
                     {
-                        var spammer = new SpamResult
-                        {
-                            Name = name,
-                            Email = email,
-                            Ip = ipAddress,
-                            ScoreEmail = spamCheckResult.Email.Confidence.ToString(CultureInfo.InvariantCulture),
-                            FrequencyEmail = spamCheckResult.Email.Frequency.ToString(CultureInfo.InvariantCulture),
-                            ScoreIp = spamCheckResult.Ip.Confidence.ToString(CultureInfo.InvariantCulture),
-                            FrequencyIp = spamCheckResult.Ip.Frequency.ToString(CultureInfo.InvariantCulture),
-                            Blocked = blocked,
-                            TotalScore = score
-                        };
+                        spamResult.Ip = ipAddress;
+                        spamResult.ScoreEmail = spamCheckResult.Email.Confidence.ToString(CultureInfo.InvariantCulture);
+                        spamResult.FrequencyEmail = spamCheckResult.Email.Frequency.ToString(CultureInfo.InvariantCulture);
+                        spamResult.ScoreIp = spamCheckResult.Ip.Confidence.ToString(CultureInfo.InvariantCulture);
+                        spamResult.FrequencyIp = spamCheckResult.Ip.Frequency.ToString(CultureInfo.InvariantCulture);
+                        spamResult.Blocked = blocked;
+                        spamResult.PotentialSpammer = true;
+                        spamResult.TotalScore = score;
 
                         if (sendMail)
-                            SendPotentialSpamMemberMail(spammer);
-
-                        return spammer;
+                            SendPotentialSpamMemberMail(spamResult);
                     }
                 }
                 else
@@ -249,52 +245,31 @@ namespace uForum.Library
                 Log.Add(LogTypes.Error, -1, string.Format("Error checking stopforumspam.org {0}", ex.Message + ex.StackTrace));
             }
 
-            return null;
+            return spamResult;
+        }
+
+        public static SpamResult CheckForSpam(string email, string name, bool sendMail)
+        {
+            var spamResult = GetSpamCheckResult(email, name, sendMail);
+
+            return spamResult.PotentialSpammer ? spamResult : null;
         }
 
         public static void SendMemberSignupMail(Member member)
         {
             try
             {
-                var ipAddress = GetIpAddress();
-                var client = new RestClient("http://api.stopforumspam.org");
-                var request = new RestRequest(string.Format("api?ip={0}&email={1}&f=json", ipAddress, HttpUtility.UrlEncode(member.Email)), Method.GET);
-                var response = client.Execute(request);
-                var jsonResult = new JsonDeserializer();
-                var spamCheckResult = jsonResult.Deserialize<SpamCheckResult>(response);
+                var spamResult = GetSpamCheckResult(member.Email, member.Text, false);
 
-                var spammer = new SpamResult
-                {
-                    MemberId = member.Id,
-                    Name = member.Text,
-                    Company = member.GetProperty<string>("company"),
-                    Bio = member.GetProperty<string>("profileText"),
-                    Email = member.Email,
-                    Ip = ipAddress
-                };
+                spamResult.MemberId = member.Id;
+                spamResult.Company = member.GetProperty<string>("company");
+                spamResult.Bio = member.GetProperty<string>("profileText");
 
-                if (spamCheckResult.Success == 1)
-                {
-                    var score = spamCheckResult.Ip.Confidence + spamCheckResult.Email.Confidence;
-                    var blocked = score > SpamBlockThreshold;
-
-                    spammer.ScoreEmail = spamCheckResult.Email.Confidence.ToString(CultureInfo.InvariantCulture);
-                    spammer.FrequencyEmail = spamCheckResult.Email.Frequency.ToString(CultureInfo.InvariantCulture);
-                    spammer.ScoreIp = spamCheckResult.Ip.Confidence.ToString(CultureInfo.InvariantCulture);
-                    spammer.FrequencyIp = spamCheckResult.Ip.Frequency.ToString(CultureInfo.InvariantCulture);
-                    spammer.Blocked = blocked;
-                    spammer.TotalScore = score;
-
-                    SendNewMemberMail(spammer);
-                }
-                else
-                {
-                    Log.Add(LogTypes.Error, -1, string.Format("Error checking stopforumspam.org {0}", spamCheckResult.Error));
-                }
+                SendNewMemberMail(spamResult);
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, -1, string.Format("Error checking stopforumspam.org {0}", ex.Message + ex.StackTrace));
+                Log.Add(LogTypes.Error, -1, string.Format("Error sending member signup mail {0}", ex.Message + ex.StackTrace));
             }
         }
 
@@ -337,7 +312,7 @@ namespace uForum.Library
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, new User(0), -1, string.Format("Error sending potential spam member notification: {0} {1} {2}", 
+                Log.Add(LogTypes.Error, new User(0), -1, string.Format("Error sending potential spam member notification: {0} {1} {2}",
                     ex.Message, ex.StackTrace, ex.InnerException));
             }
         }
@@ -368,7 +343,7 @@ namespace uForum.Library
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, new User(0), -1, string.Format("Error sending new member notification: {0} {1} {2}", 
+                Log.Add(LogTypes.Error, new User(0), -1, string.Format("Error sending new member notification: {0} {1} {2}",
                     ex.Message, ex.StackTrace, ex.InnerException));
             }
         }
@@ -391,20 +366,21 @@ namespace uForum.Library
             }
 
             body = body + string.Format(
-                       "Blocked: {0}<br />Name: {1}<br />Company: {2}<br />Bio: {3}<br />Email: {4}<br />IP: {5}<br />" +
+                       "Blocked: {0}<br />Potential spammer: {12}<br />Name: {1}<br />Company: {2}<br />Bio: {3}<br />Email: {4}<br />IP: {5}<br />" +
                        "Score IP: {6}<br />Frequency IP: {7}<br />Score e-mail: {8}<br />Frequency e-mail: {9}<br />Total score: {10}<br />Member Id: {11}",
                        spammer.Blocked,
-                       spammer.Name ?? string.Empty, 
-                       spammer.Company ?? string.Empty, 
+                       spammer.Name ?? string.Empty,
+                       spammer.Company ?? string.Empty,
                        spammer.Bio == null ? string.Empty : spammer.Bio.Replace("\n", "<br />"),
-                       spammer.Email ?? string.Empty, 
+                       spammer.Email ?? string.Empty,
                        spammer.Ip ?? string.Empty,
-                       spammer.ScoreIp ?? string.Empty, 
+                       spammer.ScoreIp ?? string.Empty,
                        spammer.FrequencyIp ?? string.Empty,
                        spammer.ScoreEmail ?? string.Empty,
-                       spammer.FrequencyEmail ?? string.Empty, 
-                       spammer.TotalScore, 
-                       spammer.MemberId);
+                       spammer.FrequencyEmail ?? string.Empty,
+                       spammer.TotalScore,
+                       spammer.MemberId,
+                       spammer.PotentialSpammer);
 
             var querystring = string.Format("api?ip={0}&email={1}&f=json", spammer.Ip, HttpUtility.UrlEncode(spammer.Email));
 
@@ -444,6 +420,7 @@ namespace uForum.Library
         public string ScoreEmail { get; set; }
         public string FrequencyEmail { get; set; }
         public bool AlreadyInSpamRole { get; set; }
+        public bool PotentialSpammer { get; set; }
         public bool Blocked { get; set; }
         public float TotalScore { get; set; }
     }
