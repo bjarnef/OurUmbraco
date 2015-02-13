@@ -363,23 +363,24 @@ namespace uForum.Businesslogic
             using (var client = new WebClient())
             {
                 var topic = Topic.GetTopic(topicId);
-
+                
                 var post = string.Format("Topic title: *{0}*\n\n Link to topic: http://our.umbraco.org{1}\n\n", topic.Title, Xslt.NiceTopicUrl(topic.Id));
-                post = post + string.Format("{0} text: {1}\n\n", commentType, postBody);
                 post = post + string.Format("Go to member http://our.umbraco.org/member/{0}\n\n", memberId);
 
-                var body = string.Format("The following forum post was marked as spam by the spam system, if this is incorrect make sure to mark it as ham.\n\n{0}", post);
-                
                 if (memberId != 0)
                 {
                     var member = new Member(memberId);
                     var querystring = string.Format("api?ip={0}&email={1}&f=json", Utills.GetIpAddress(), HttpUtility.UrlEncode(member.Email));
 
-                    body = body + string.Format("Check the StopForumSpam rating: http://api.stopforumspam.org/{0}", querystring);
-                }
+                    post = post + string.Format("Check the StopForumSpam rating: http://api.stopforumspam.org/{0}", querystring);
+                } 
 
+                post = post + string.Format("{0} text: {1}\n\n", commentType, postBody.Substring(0, 2000));
+                
+                var body = string.Format("The following forum post was marked as spam by the spam system, if this is incorrect make sure to mark it as ham.\n\n{0}", post);
+                
                 body = body.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
-
+                
                 var values = new NameValueCollection
                              {
                                  {"channel", ConfigurationManager.AppSettings["SlackChannel"]},
