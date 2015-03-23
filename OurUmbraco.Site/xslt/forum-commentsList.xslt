@@ -578,9 +578,19 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-
+	
+	<xsl:variable name="membergroups" select="umbraco.library:Split($groups,',')" />
+	<xsl:variable name="mvpcandidate">
+		<xsl:for-each select="$membergroups//value">
+			<xsl:if test=". = 'mvp-candidate'">1</xsl:if>
+		</xsl:for-each>
+	</xsl:variable>
 
     <div class="memberBadge rounded">
+		<xsl:if test="string-length($mvpcandidate) > 0">
+			<xsl:attribute name="class">memberBadge rounded nominee</xsl:attribute>
+		</xsl:if>	
+		
       <a href="/member/{$mem//@id}">
         <img alt="Avatar" class="photo" src="/media/avatar/{$mem//@id}.jpg" style="width: 32px; height: 32px;" />
       </a>
@@ -592,6 +602,14 @@
         <xsl:value-of select="$reputationCurrent"/>
         <small>karma</small>
       </span>
+
+	<xsl:if test="string-length($mvpcandidate) > 0">
+		<span class="mvpnominee">
+			<xsl:value-of select="Exslt.ExsltDatesAndTimes:year()"/> MVP <br />
+			<strong>Nominee</strong>
+			<a href="/people/mvps">Vote</a>
+		</span>
+	</xsl:if>	  
     </div>
 
     <xsl:if test="string-length($groups) > 0">

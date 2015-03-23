@@ -617,7 +617,48 @@ html .treshold{display:none}
 .release div p {
 				color: silver;	
 				}
+.memberBadge.nominee {
+	padding: 10px 0 0 0;
+}
 
+.memberBadge.nominee .posts {
+	margin-top: 8px;
+}
+
+.memberBadge.nominee small {
+	color: #000;
+}
+
+.nominee .mvpnominee {
+	background-color: #36ACB2;
+	color: #fff;
+	font-size: 10px;
+	padding: 10px 0 0;
+	margin-top: 10px;
+	text-align: center;
+	font-weight: 100;
+}
+
+.nominee .mvpnominee strong {
+	color: #000;
+	font-size: 11px;
+}
+
+.nominee .mvpnominee a {
+	margin-top: 10px;
+	display: block;
+	font-size: 13px;
+	font-weight: bold;
+	text-decoration: none;
+	background: #572A6F;
+	color: #fff;
+	padding: 8px 0;
+}
+
+.nominee .mvpnominee a:hover {
+	background: #f9fd54;
+	color: #36ACB2;
+}
 
 
 
