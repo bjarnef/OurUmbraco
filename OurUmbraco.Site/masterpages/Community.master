@@ -1,5 +1,36 @@
 ﻿<%@ Master Language="C#" MasterPageFile="~/masterpages/Master.master" AutoEventWireup="true" %>
 
+<asp:Content ContentPlaceHolderID="WowBar" runat="server">
+<div class="wowBar"><div id="randomImage"><a href="" target="_blank"></a></div></div>
+<script type="text/javascript">
+$(function() {
+			$("#alertBar").hide();
+	  		var randomImage = {
+	  		    
+	  		    paths: [
+	  		      "https://our.umbraco.org/codegarden/tobias.png",	  		      
+	  		      "https://our.umbraco.org/codegarden/fuji.png",
+	  		      "https://our.umbraco.org/codegarden/brittany.png"
+	  		    ],
+	  		    
+	  		    generate: function() {
+	  		      var path = randomImage.paths[Math.floor(Math.random() *
+	  		      randomImage.paths.length)];
+
+	  		      var img = new Image();
+	  		      img.src = path;
+	  		      $("#randomImage a").html(img);
+	  		      $("#randomImage a").attr("href", 'http://codegarden15.com');
+
+	  		    }
+	  		  }
+
+	  		  randomImage.generate();
+
+	  		  });
+</script>
+</asp:Content>
+
 <asp:Content ContentPlaceHolderId="Main" runat="server">
 
 <div id="dashboard" class="subpage">
