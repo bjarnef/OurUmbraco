@@ -1,5 +1,7 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ProjectEditor.ascx.cs" Inherits="our.usercontrols.ProjectEditor" %>
 
+<asp:PlaceHolder runat="server" ID="notallowed" Visible="False"><h2>Sorry, you are not yet allowed to create projects</h2></asp:PlaceHolder>
+
 <asp:PlaceHolder ID="holder" runat="server">
 
 <h1><asp:Literal runat="server" ID="lt_title" Text="Create project"></asp:Literal></h1>
@@ -135,3 +137,4 @@
 </script>
 
 </asp:PlaceHolder>
+
